@@ -1,17 +1,3 @@
 [
-    {
-        "order_id": 1,
-        "name": "laptop stand",
-        "amount": 2
-    },
-    {
-        "order_id": 2,
-        "name": "mouse ",
-        "amount": 5
-    },
-    {
-        "order_id": 3,
-        "name": "phone",
-        "amount": 9
-    }
+  
 ]

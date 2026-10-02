@@ -1,188 +1,199 @@
 import json
 from pathlib import Path
 
-INVENTORY_FILE = Path(__file__).parent / "inventory.txt"
+INVENTORY_FILE = Path(__file__).parent / "inventory.json"
 
 
 def load_inventory():
-    
+    """Load inventory from inventory.json."""
 
-    try:
-        with INVENTORY_FILE.open("r") as file:
-            data = json.load(file)
+    if INVENTORY_FILE.exists():
 
-        return data
+        print("inventory.json found.")
 
-    except FileNotFoundError:
-        print("No inventory file found. Starting with empty inventory.")
-        return []
+        try:
+            with INVENTORY_FILE.open("r") as file:
+                inventory = json.load(file)
 
-    except json.JSONDecodeError:
-        print("Inventory file contains invalid JSON.")
-        return []
+            print("Inventory loaded successfully.")
+            return inventory
 
-
-def save_inventory(order_id, name, amount):
-   
-    try:
-        with INVENTORY_FILE.open("r") as file:
-            orders = json.load(file)
-
-    except FileNotFoundError:
-        orders = []
-
-    except json.JSONDecodeError:
-        orders = []
-
-   
-    orders.append({
-        "order_id": order_id,
-        "name": name,
-        "amount": amount
-    })
-    with INVENTORY_FILE.open("w") as file:
-        json.dump(orders, file, indent=4)
-
-
-def get_valid_name():
-
-    name = input("Enter name of product or quit to exit: ")
-
-    if name.lower() == "quit":
-        return "quit"
-
-    if name.strip() == "":
-        print("Product name cannot be empty.")
-        return None
-
-    return name
-
-
-def get_valid_input():
-
-    amount = input("Enter Quantity Amount or quit to exit: ")
-
-    if amount.lower() == "quit":
-        return "quit"
-
-    try:
-        amount = int(amount)
-
-        if amount < 0:
-            print("Value cannot be less than 0")
-            return None
-
-        return amount
-
-    except ValueError:
-        print("Enter a valid number")
-        return None
-
-
-def display_current_orders(transaction_history):
-   
-
-    print("\nCurrent Orders:\n")
-
-    if not transaction_history:
-        print("No previous orders.")
+        except json.JSONDecodeError:
+            print("Invalid inventory.json.")
+            return []
 
     else:
-        for order in transaction_history:
+        print("inventory.json not found.")
+        print("Starting with empty inventory.")
+        return []
+
+
+def save_inventory(inventory):
+    """Save inventory to inventory.json."""
+
+    with INVENTORY_FILE.open("w") as file:
+        json.dump(inventory, file, indent=4)
+
+    print("Inventory saved successfully.")
+
+
+def display_all(inventory):
+    """Display all products."""
+
+    print("\nCurrent Inventory")
+    print("-" * 70)
+
+    if not inventory:
+        print("No products in inventory.")
+
+    else:
+        for product in inventory:
             print(
-                f"{order['order_id']}, "
-                f"{order['name']}, "
-                f"{order['amount']}"
+                f"ID: {product['id']} | "
+                f"Name: {product['name']} | "
+                f"Price: ${product['price']:.2f} | "
+                f"Stock: {product['stock']}"
             )
 
-    print()
+    print("-" * 70)
 
 
-def display_new_order(order_id, name, amount):
-   
+def add_product(inventory):
+    """Add a new product."""
 
-    print("\nNew Order Added:\n")
-    print(f"{order_id}, {name}, {amount}")
-    print()
+    print("\nAdd New Product")
+
+    product_id = input("Product ID: ")
+    product_name = input("Product Name: ")
+
+    try:
+        price = float(input("Price: "))
+        stock = int(input("Stock Quantity: "))
+    except ValueError:
+        print("Please enter a valid price and stock quantity.")
+        return
+
+    new_product = {
+        "id": product_id,
+        "name": product_name,
+        "price": price,
+        "stock": stock
+    }
+
+    inventory.append(new_product)
+
+    print("Product added successfully!")
 
 
-def generate_report(total_units, failed_attempts, delivery_count):
-    
+def update_stock(inventory):
+    """Update the stock of an existing product."""
 
-    print(f"The total delivery made is {delivery_count}")
-    print(f"Total units delivered is {total_units}")
-    print(f"Total failed/rejected entries: {failed_attempts}")
+    product_id = input("Enter Product ID: ")
+
+    for product in inventory:
+
+        if product["id"] == product_id:
+
+            try:
+                new_stock = int(input("Enter new stock quantity: "))
+            except ValueError:
+                print("Please enter a valid number.")
+                return
+
+            product["stock"] = new_stock
+
+            print("Stock updated successfully!")
+            return
+
+    print("Product not found.")
+
+
+def search_product(inventory):
+    """Search for a product."""
+
+    search = input("Enter Product ID or Name: ")
+
+    found = False
+
+    for product in inventory:
+
+        if (
+            product["id"].lower() == search.lower()
+            or product["name"].lower() == search.lower()
+        ):
+
+            print("\nProduct Found")
+            print("-" * 70)
+
+            print(
+                f"ID: {product['id']} | "
+                f"Name: {product['name']} | "
+                f"Price: ${product['price']:.2f} | "
+                f"Stock: {product['stock']}"
+            )
+
+            print("-" * 70)
+
+            found = True
+
+    if not found:
+        print("Product not found.")
 
 
 def main():
 
+    inventory = load_inventory()
     
-    transaction_history = load_inventory()
-
-    failed_entries = 0
-
-    
-    delivery_count = len(transaction_history)
-
-  
-    total_delivery = sum(
-        order["amount"] for order in transaction_history
-    )
-
-    display_current_orders(transaction_history)
+    save_inventory(inventory)
 
     while True:
 
-       
-        name = get_valid_name()
+        print("""
+----------- MENU -----------
+1. Display All Products
+2. Add Product
+3. Update Stock
+4. Search Product
+5. Save Inventory
+6. Exit
+----------------------------
+""")
 
-        if name == "quit":
-            print("Orders successfully saved to inventory.txt")
+        option = input("Enter option: ")
+
+        if option == "1":
+
+            display_all(inventory)
+            print("Display Inventory")
+
+        elif option == "2":
+
+            add_product(inventory)
+            print("Add Product")
+
+        elif option == "3":
+
+            update_stock(inventory)
+            print("update Inventory")
+
+        elif option == "4":
+
+            search_product(inventory)
+           
+
+        elif option == "5":
+
+            save_inventory(inventory)
+            print("Save Inventory")
+
+        elif option == "6":
+
+            print("Exiting program")
             break
 
-        if name is None:
-            failed_entries += 1
-            continue
+        else:
 
-       
-        amount = get_valid_input()
-
-        if amount == "quit":
-            print("Orders successfully saved to inventory.txt")
-            break
-
-        if amount is None:
-            failed_entries += 1
-            continue
-
-        
-        delivery_count += 1
-        order_id = delivery_count
-
-        
-        total_delivery += amount
-
-        
-        transaction_history.append({
-            "order_id": order_id,
-            "name": name,
-            "amount": amount
-        })
-
-       
-        save_inventory(order_id, name, amount)
-
-        
-        display_new_order(order_id, name, amount)
-
-    
-    print()
-
-    generate_report(
-        total_delivery,
-        failed_entries,
-        delivery_count
-    )
+            print("Invalid option. Please enter 1-6.")
 
 
 if __name__ == "__main__":
